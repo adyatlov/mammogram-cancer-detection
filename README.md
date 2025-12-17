@@ -29,14 +29,17 @@ bc/
 │   ├── train.py            # Training script
 │   ├── predict.py          # Inference script
 │   └── predict_qa.py       # QA holdout predictions
+├── experiments/            # Experiment results (one dir per run)
+│   └── YYYY-MM-DD-model-params/
+│       ├── config.json     # Hyperparameters and settings
+│       ├── report.html     # Visual QA review report
+│       └── qa_predictions.csv
 ├── data/                   # Data directory (not in git)
 │   ├── train.csv           # Training labels
 │   ├── train_processed.csv # Preprocessed metadata
 │   └── qa_holdout.csv      # QA holdout set
 ├── outputs/
-│   ├── models/             # Trained model checkpoints
-│   ├── qa_review/          # QA review HTML and images
-│   └── qa_predictions.csv  # QA predictions
+│   └── models/             # Trained model checkpoints (not in git)
 ├── EXPERIMENT_LOG.md       # Detailed experiment journal
 ├── pyproject.toml          # Python dependencies
 └── README.md               # This file

@@ -1,0 +1,39 @@
+{
+  "experiment_name": "efficientnet-b0-baseline",
+  "date": "2024-12-17",
+  "model": {
+    "architecture": "efficientnet_b0",
+    "pretrained": true,
+    "input_size": 512
+  },
+  "training": {
+    "batch_size": 32,
+    "learning_rate": 1e-4,
+    "num_epochs": 10,
+    "optimizer": "AdamW",
+    "scheduler": "CosineAnnealingLR",
+    "loss": "BCEWithLogitsLoss",
+    "pos_weight": 23.67
+  },
+  "data": {
+    "train_images": 43396,
+    "val_images": 10859,
+    "qa_holdout_patients": 100,
+    "qa_holdout_images": 451,
+    "cancer_rate_train": "2.04%"
+  },
+  "hardware": {
+    "gpu": "NVIDIA H200",
+    "training_time_minutes": 17
+  },
+  "results": {
+    "best_epoch": 9,
+    "val_pf1": 0.067,
+    "val_loss": 1.25,
+    "qa_auc_roc": 0.8626,
+    "qa_recall": 0.75,
+    "qa_precision": 0.0984,
+    "qa_cancer_detected": "6/8"
+  },
+  "checkpoint": "outputs/models/best-epoch=09-val_pf1=0.0670.ckpt"
+}

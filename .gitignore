@@ -48,11 +48,14 @@ outputs/mock_zip/
 **/*.pt
 **/*.pth
 
-# QA review images (large, can be regenerated)
-outputs/qa_review/*.png
+# Experiments - exclude images, keep reports and configs
+experiments/**/*.png
+!experiments/**/report.html
+!experiments/**/config.json
+!experiments/**/qa_predictions.csv
 
-# Keep QA review HTML page
-!outputs/qa_review/index.html
+# Old outputs structure (deprecated)
+outputs/qa_review/
 
 # Lightning logs (can be regenerated)
 lightning_logs/
