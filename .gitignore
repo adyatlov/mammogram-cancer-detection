@@ -1,0 +1,74 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+build/
+dist/
+wheels/
+*.egg-info/
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# uv
+uv.lock
+
+# Data files (large, downloaded separately)
+data/train_images/
+data/test_images/
+data/train_processed/
+data/*.dcm
+data/*.zip
+*.tar.gz
+
+# Keep mock data for testing (small subset)
+!data/mock/
+
+# Exclude redundant mock copies
+data/mock_from_zip/
+outputs/mock*/
+outputs/mock_zip/
+
+# Model checkpoints (large binary files)
+**/*.ckpt
+**/*.pt
+**/*.pth
+
+# QA review images (large, can be regenerated)
+outputs/qa_review/*.png
+
+# Keep QA review HTML page
+!outputs/qa_review/index.html
+
+# Lightning logs (can be regenerated)
+lightning_logs/
+
+# Temporary files
+tmp/
+*.tmp
+*.log
+
+# Kaggle reference HTML (not needed in repo)
+RSNA Screening Mammography Breast Cancer Detection*.html
+RSNA Screening Mammography Breast Cancer Detection*_files/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# Claude
+.claude/

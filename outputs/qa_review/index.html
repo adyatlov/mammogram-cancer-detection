@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Breast Cancer Detection - QA Review</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        h1 {
+            color: #333;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #555;
+            margin-top: 30px;
+        }
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .stat-card h3 {
+            margin: 0 0 10px 0;
+            color: #666;
+            font-size: 14px;
+            text-transform: uppercase;
+        }
+        .stat-card .value {
+            font-size: 36px;
+            font-weight: bold;
+            color: #333;
+        }
+        .stat-card.good .value { color: #28a745; }
+        .stat-card.warning .value { color: #ffc107; }
+        .stat-card.danger .value { color: #dc3545; }
+
+        .image-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .image-card {
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .image-card img {
+            width: 100%;
+            height: 300px;
+            object-fit: contain;
+            background: #000;
+        }
+        .image-card .info {
+            padding: 15px;
+        }
+        .image-card h4 {
+            margin: 0 0 10px 0;
+            color: #333;
+        }
+        .image-card .meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .badge.cancer { background: #dc3545; color: white; }
+        .badge.healthy { background: #28a745; color: white; }
+        .badge.detected { background: #28a745; color: white; }
+        .badge.missed { background: #dc3545; color: white; }
+        .badge.false-pos { background: #ffc107; color: #333; }
+
+        .prob-bar {
+            width: 100%;
+            height: 8px;
+            background: #e9ecef;
+            border-radius: 4px;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+        .prob-bar .fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.3s;
+        }
+        .prob-bar .fill.high { background: #dc3545; }
+        .prob-bar .fill.medium { background: #ffc107; }
+        .prob-bar .fill.low { background: #28a745; }
+
+        .section {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .legend {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin: 20px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background: #f8f9fa;
+            font-weight: 600;
+        }
+        tr:hover {
+            background: #f5f5f5;
+        }
+    </style>
+</head>
+<body>
+    <h1>Breast Cancer Detection - QA Review</h1>
+    <p>Model: EfficientNet-B0 | Training: 10 epochs | Best val_pf1: 0.067</p>
+
+    <div class="summary">
+        <div class="stat-card">
+            <h3>QA Images</h3>
+            <div class="value">451</div>
+        </div>
+        <div class="stat-card">
+            <h3>QA Patients</h3>
+            <div class="value">100</div>
+        </div>
+        <div class="stat-card good">
+            <h3>AUC-ROC</h3>
+            <div class="value">0.86</div>
+        </div>
+        <div class="stat-card good">
+            <h3>Recall</h3>
+            <div class="value">75%</div>
+        </div>
+        <div class="stat-card warning">
+            <h3>Precision</h3>
+            <div class="value">9.8%</div>
+        </div>
+        <div class="stat-card">
+            <h3>Cancer Cases</h3>
+            <div class="value">8</div>
+        </div>
+    </div>
+
+    <div class="legend">
+        <div class="legend-item"><span class="badge cancer">CANCER</span> Actual cancer case</div>
+        <div class="legend-item"><span class="badge detected">DETECTED</span> Correctly identified (prob > 0.5)</div>
+        <div class="legend-item"><span class="badge missed">MISSED</span> Cancer not detected (prob < 0.5)</div>
+        <div class="legend-item"><span class="badge false-pos">FALSE POS</span> Healthy but flagged as suspicious</div>
+    </div>
+
+    <h2>Cancer Cases (4 patients, 8 images)</h2>
+    <p>The model detected <strong>6 of 8</strong> cancer images (75% recall). 2 images were missed.</p>
+
+    <div class="image-grid">
+        <div class="image-card">
+            <img src="01_CANCER_58195_480438532_prob0.834.png" alt="Cancer case">
+            <div class="info">
+                <h4>Patient 58195 - Image 1</h4>
+                <div class="meta">
+                    <span class="badge cancer">CANCER</span>
+                    <span class="badge detected">DETECTED</span>
+                    <span>Prob: <strong>0.834</strong></span>
+                </div>
+                <div class="prob-bar"><div class="fill high" style="width: 83.4%"></div></div>
+            </div>
+        </div>
+
+        <div class="image-card">
+            <img src="02_CANCER_58195_631926753_prob0.737.png" alt="Cancer case">
+            <div class="info">
+                <h4>Patient 58195 - Image 2</h4>
+                <div class="meta">
+                    <span class="badge cancer">CANCER</span>
+                    <span class="badge detected">DETECTED</span>
+                    <span>Prob: <strong>0.737</strong></span>
+                </div>
+                <div class="prob-bar"><div class="fill high" style="width: 73.7%"></div></div>
+            </div>
+        </div>
+
+        <div class="image-card">
+            <img src="03_CANCER_56713_1101766929_prob0.708.png" alt="Cancer case">
+            <div class="info">
+                <h4>Patient 56713 - Image 1</h4>
+                <div class="meta">
+                    <span class="badge cancer">CANCER</span>
+                    <span class="badge detected">DETECTED</span>
+                    <span>Prob: <strong>0.708</strong></span>
+                </div>
+                <div class="prob-bar"><div class="fill high" style="width: 70.8%"></div></div>
+            </div>
+        </div>
+
+        <div class="image-card">
+            <img src="04_CANCER_56713_238470103_prob0.690.png" alt="Cancer case">
+            <div class="info">
+                <h4>Patient 56713 - Image 2</h4>
+                <div class="meta">
+                    <span class="badge cancer">CANCER</span>
+                    <span class="badge detected">DETECTED</span>
+                    <span>Prob: <strong>0.690</strong></span>
+                </div>
+                <div class="prob-bar"><div class="fill high" style="width: 69.0%"></div></div>
+            </div>
+        </div>
+
+        <div class="image-card">
+            <img src="05_CANCER_34676_1586860851_prob0.623.png" alt="Cancer case">
+            <div class="info">
+                <h4>Patient 34676 - Image 1</h4>
+                <div class="meta">
+                    <span class="badge cancer">CANCER</span>
+                    <span class="badge detected">DETECTED</span>
+                    <span>Prob: <strong>0.623</strong></span>
+                </div>
+                <div class="prob-bar"><div class="fill high" style="width: 62.3%"></div></div>
+            </div>
+        </div>
+
+        <div class="image-card">
+            <img src="06_CANCER_60653_101263956_prob0.562.png" alt="Cancer case">
+            <div class="info">
+                <h4>Patient 60653 - Image 1</h4>
+                <div class="meta">
+                    <span class="badge cancer">CANCER</span>
+                    <span class="badge detected">DETECTED</span>
+                    <span>Prob: <strong>0.562</strong></span>
+                </div>
+                <div class="prob-bar"><div class="fill high" style="width: 56.2%"></div></div>
+            </div>
+        </div>
+
+        <div class="image-card" style="border: 3px solid #dc3545;">
+            <img src="07_CANCER_MISSED_60653_2052987229_prob0.253.png" alt="Cancer case - MISSED">
+            <div class="info">
+                <h4>Patient 60653 - Image 2</h4>
+                <div class="meta">
+                    <span class="badge cancer">CANCER</span>
+                    <span class="badge missed">MISSED</span>
+                    <span>Prob: <strong>0.253</strong></span>
+                </div>
+                <div class="prob-bar"><div class="fill low" style="width: 25.3%"></div></div>
+            </div>
+        </div>
+
+        <div class="image-card" style="border: 3px solid #dc3545;">
+            <img src="08_CANCER_MISSED_34676_966865143_prob0.123.png" alt="Cancer case - MISSED">
+            <div class="info">
+                <h4>Patient 34676 - Image 2</h4>
+                <div class="meta">
+                    <span class="badge cancer">CANCER</span>
+                    <span class="badge missed">MISSED</span>
+                    <span>Prob: <strong>0.123</strong></span>
+                </div>
+                <div class="prob-bar"><div class="fill low" style="width: 12.3%"></div></div>
+            </div>
+        </div>
+    </div>
+
+    <h2>Top False Positives (Highest Suspicious Healthy Cases)</h2>
+    <p>These are healthy cases that the model flagged as highly suspicious. They warrant investigation to understand what patterns the model is detecting.</p>
+
+    <div class="image-grid">
+        <div class="image-card">
+            <img src="09_FALSE_POS_56713_245444653_prob0.873.png" alt="False Positive">
+            <div class="info">
+                <h4>Patient 56713 - Other View</h4>
+                <div class="meta">
+                    <span class="badge healthy">HEALTHY</span>
+                    <span class="badge false-pos">FALSE POS</span>
+                    <span>Prob: <strong>0.873</strong></span>
+                </div>
+                <div class="prob-bar"><div class="fill high" style="width: 87.3%"></div></div>
+                <p style="font-size: 12px; color: #666; margin-top: 10px;">Note: Same patient as cancer case - model may be detecting patient-level features</p>
+            </div>
+        </div>
+
+        <div class="image-card">
+            <img src="10_FALSE_POS_4350_698328845_prob0.865.png" alt="False Positive">
+            <div class="info">
+                <h4>Patient 4350</h4>
+                <div class="meta">
+                    <span class="badge healthy">HEALTHY</span>
+                    <span class="badge false-pos">FALSE POS</span>
+                    <span>Prob: <strong>0.865</strong></span>
+                </div>
+                <div class="prob-bar"><div class="fill high" style="width: 86.5%"></div></div>
+            </div>
+        </div>
+
+        <div class="image-card">
+            <img src="11_FALSE_POS_59152_1181374608_prob0.862.png" alt="False Positive">
+            <div class="info">
+                <h4>Patient 59152</h4>
+                <div class="meta">
+                    <span class="badge healthy">HEALTHY</span>
+                    <span class="badge false-pos">FALSE POS</span>
+                    <span>Prob: <strong>0.862</strong></span>
+                </div>
+                <div class="prob-bar"><div class="fill high" style="width: 86.2%"></div></div>
+            </div>
+        </div>
+
+        <div class="image-card">
+            <img src="12_FALSE_POS_29236_1267984123_prob0.831.png" alt="False Positive">
+            <div class="info">
+                <h4>Patient 29236</h4>
+                <div class="meta">
+                    <span class="badge healthy">HEALTHY</span>
+                    <span class="badge false-pos">FALSE POS</span>
+                    <span>Prob: <strong>0.831</strong></span>
+                </div>
+                <div class="prob-bar"><div class="fill high" style="width: 83.1%"></div></div>
+            </div>
+        </div>
+
+        <div class="image-card">
+            <img src="13_FALSE_POS_34676_420354984_prob0.829.png" alt="False Positive">
+            <div class="info">
+                <h4>Patient 34676 - Other View</h4>
+                <div class="meta">
+                    <span class="badge healthy">HEALTHY</span>
+                    <span class="badge false-pos">FALSE POS</span>
+                    <span>Prob: <strong>0.829</strong></span>
+                </div>
+                <div class="prob-bar"><div class="fill high" style="width: 82.9%"></div></div>
+                <p style="font-size: 12px; color: #666; margin-top: 10px;">Note: Same patient as cancer case - model may be detecting patient-level features</p>
+            </div>
+        </div>
+
+        <div class="image-card">
+            <img src="14_FALSE_POS_57622_1916252926_prob0.805.png" alt="False Positive">
+            <div class="info">
+                <h4>Patient 57622</h4>
+                <div class="meta">
+                    <span class="badge healthy">HEALTHY</span>
+                    <span class="badge false-pos">FALSE POS</span>
+                    <span>Prob: <strong>0.805</strong></span>
+                </div>
+                <div class="prob-bar"><div class="fill high" style="width: 80.5%"></div></div>
+            </div>
+        </div>
+
+        <div class="image-card">
+            <img src="15_FALSE_POS_7891_2044537579_prob0.800.png" alt="False Positive">
+            <div class="info">
+                <h4>Patient 7891</h4>
+                <div class="meta">
+                    <span class="badge healthy">HEALTHY</span>
+                    <span class="badge false-pos">FALSE POS</span>
+                    <span>Prob: <strong>0.800</strong></span>
+                </div>
+                <div class="prob-bar"><div class="fill high" style="width: 80.0%"></div></div>
+            </div>
+        </div>
+
+        <div class="image-card">
+            <img src="16_FALSE_POS_52084_379046213_prob0.791.png" alt="False Positive">
+            <div class="info">
+                <h4>Patient 52084</h4>
+                <div class="meta">
+                    <span class="badge healthy">HEALTHY</span>
+                    <span class="badge false-pos">FALSE POS</span>
+                    <span>Prob: <strong>0.791</strong></span>
+                </div>
+                <div class="prob-bar"><div class="fill high" style="width: 79.1%"></div></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Cancer Detection Summary by Patient</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Patient ID</th>
+                    <th>Images</th>
+                    <th>Detected</th>
+                    <th>Missed</th>
+                    <th>Detection Rate</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>58195</td>
+                    <td>2</td>
+                    <td>2 (0.834, 0.737)</td>
+                    <td>0</td>
+                    <td style="color: #28a745; font-weight: bold;">100%</td>
+                </tr>
+                <tr>
+                    <td>56713</td>
+                    <td>2</td>
+                    <td>2 (0.708, 0.690)</td>
+                    <td>0</td>
+                    <td style="color: #28a745; font-weight: bold;">100%</td>
+                </tr>
+                <tr>
+                    <td>34676</td>
+                    <td>2</td>
+                    <td>1 (0.623)</td>
+                    <td>1 (0.123)</td>
+                    <td style="color: #ffc107; font-weight: bold;">50%</td>
+                </tr>
+                <tr>
+                    <td>60653</td>
+                    <td>2</td>
+                    <td>1 (0.562)</td>
+                    <td>1 (0.253)</td>
+                    <td style="color: #ffc107; font-weight: bold;">50%</td>
+                </tr>
+            </tbody>
+            <tfoot>
+                <tr style="background: #f8f9fa; font-weight: bold;">
+                    <td>Total</td>
+                    <td>8</td>
+                    <td>6</td>
+                    <td>2</td>
+                    <td style="color: #28a745;">75%</td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>Key Observations</h2>
+        <ul>
+            <li><strong>Good discriminative ability</strong>: AUC-ROC of 0.86 indicates the model can distinguish cancer from healthy in most cases</li>
+            <li><strong>High recall for cancer</strong>: 75% of cancer images detected (6/8)</li>
+            <li><strong>Low precision expected</strong>: Only 9.8% precision due to highly imbalanced data (~2% cancer rate)</li>
+            <li><strong>Patient-level patterns</strong>: Top false positive (patient 56713) is from same patient with cancer - model may be learning patient-level features</li>
+            <li><strong>Missed cases analysis</strong>: The 2 missed cancer images have low probabilities (0.123, 0.253) - these views may look different from typical cancer presentations</li>
+        </ul>
+
+        <h3>Potential Improvements</h3>
+        <ul>
+            <li>Use larger model (EfficientNet-B4/B5) for better feature extraction</li>
+            <li>Add more aggressive augmentation (elastic transforms, grid distortion)</li>
+            <li>Train for more epochs with learning rate scheduling</li>
+            <li>Use multi-view fusion (combine predictions from different views per patient)</li>
+            <li>Apply Grad-CAM visualization to understand what features the model is detecting</li>
+        </ul>
+    </div>
+
+    <footer style="text-align: center; padding: 20px; color: #666; font-size: 12px;">
+        Generated on December 17, 2024 | Model: EfficientNet-B0 | Dataset: RSNA Breast Cancer Detection
+    </footer>
+</body>
+</html>
