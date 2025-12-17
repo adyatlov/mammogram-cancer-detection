@@ -161,6 +161,7 @@ def main():
     parser.add_argument("--output", type=Path, default=Path("outputs/qa_predictions.csv"))
     parser.add_argument("--batch-size", type=int, default=16)
     parser.add_argument("--num-workers", type=int, default=4)
+    parser.add_argument("--image-size", type=int, default=512)
     parser.add_argument("--device", type=str, default="cuda")
     args = parser.parse_args()
 
@@ -170,6 +171,7 @@ def main():
         output_path=args.output,
         batch_size=args.batch_size,
         num_workers=args.num_workers,
+        image_size=args.image_size,
         device=args.device,
     )
 
