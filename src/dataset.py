@@ -16,6 +16,8 @@ from torch.utils.data import Dataset
 def get_train_transforms(image_size: int = 512) -> A.Compose:
     """Get augmentation transforms for training."""
     return A.Compose([
+        A.LongestMaxSize(max_size=image_size),
+        A.PadIfNeeded(min_height=image_size, min_width=image_size, border_mode=0, value=0),
         A.HorizontalFlip(p=0.5),
         A.VerticalFlip(p=0.5),
         A.Rotate(limit=10, p=0.5),
@@ -29,6 +31,8 @@ def get_train_transforms(image_size: int = 512) -> A.Compose:
 def get_val_transforms(image_size: int = 512) -> A.Compose:
     """Get transforms for validation/test (no augmentation)."""
     return A.Compose([
+        A.LongestMaxSize(max_size=image_size),
+        A.PadIfNeeded(min_height=image_size, min_width=image_size, border_mode=0, value=0),
         A.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
         ToTensorV2(),
     ])

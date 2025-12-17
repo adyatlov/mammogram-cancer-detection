@@ -1,8 +1,11 @@
 """
 Preprocess DICOM mammograms to PNG images.
 
-This script converts DICOM files to 512x512 PNG images with proper
+This script converts DICOM files to PNG images with proper
 windowing and normalization for training.
+
+By default, saves at native resolution to preserve detail.
+Resize to target size during training via transforms.
 
 Supports reading directly from zip files to avoid extraction.
 """
@@ -63,8 +66,16 @@ def read_dicom(path: Path) -> np.ndarray:
     return img
 
 
-def resize_and_pad(img: np.ndarray, target_size: int = 512) -> np.ndarray:
-    """Resize image maintaining aspect ratio and pad to square."""
+def resize_and_pad(img: np.ndarray, target_size: int | None = None) -> np.ndarray:
+    """Resize image maintaining aspect ratio and pad to square.
+
+    Args:
+        img: Input image
+        target_size: Target size (square). If None or 0, return original image.
+    """
+    if target_size is None or target_size == 0:
+        return img
+
     h, w = img.shape[:2]
 
     # Calculate scale to fit within target_size
@@ -275,8 +286,8 @@ def main():
     parser.add_argument(
         "--target-size",
         type=int,
-        default=512,
-        help="Target image size (square)",
+        default=0,
+        help="Target image size (square). 0 = native resolution (recommended)",
     )
     parser.add_argument(
         "--num-workers",
