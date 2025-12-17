@@ -44,6 +44,8 @@ def train(
     devices: int = 1,
     label_smoothing: float = 0.0,
     pos_weight: float | None = None,
+    qa_patients: int = 100,
+    qa_positive: int = 4,
 ):
     """
     Train the mammogram classification model.
@@ -62,6 +64,8 @@ def train(
         devices: Number of devices (GPUs)
         label_smoothing: Smoothing for positive labels (0.2 means 1.0 -> 0.8)
         pos_weight: Weight for positive class (None = auto-compute from data)
+        qa_patients: Number of patients for QA holdout (0 = skip QA holdout)
+        qa_positive: Number of cancer-positive patients in QA holdout
     """
     # Load preprocessed metadata
     train_csv = data_dir / "train_processed.csv"
@@ -74,13 +78,16 @@ def train(
     df = pd.read_csv(train_csv)
     print(f"Loaded {len(df)} images from {train_csv}")
 
-    # First, set aside QA holdout (100 patients, 4 with cancer)
-    remaining_df, qa_df = create_qa_holdout(df, n_patients=100, n_positive=4)
-
-    # Save QA holdout for manual review
-    qa_csv = data_dir / "qa_holdout.csv"
-    qa_df.to_csv(qa_csv, index=False)
-    print(f"QA holdout saved to {qa_csv}")
+    # Create QA holdout if requested
+    if qa_patients > 0:
+        remaining_df, qa_df = create_qa_holdout(df, n_patients=qa_patients, n_positive=qa_positive)
+        # Save QA holdout for manual review
+        qa_csv = data_dir / "qa_holdout.csv"
+        qa_df.to_csv(qa_csv, index=False)
+        print(f"QA holdout saved to {qa_csv}")
+    else:
+        remaining_df = df
+        print("Skipping QA holdout (qa_patients=0)")
 
     # Split remaining data by patient
     train_df, val_df = create_patient_split(remaining_df, val_ratio=val_ratio)
@@ -256,6 +263,18 @@ def main():
         default=None,
         help="Weight for positive class (default: auto-compute from data)",
     )
+    parser.add_argument(
+        "--qa-patients",
+        type=int,
+        default=100,
+        help="Number of patients for QA holdout (0 = skip QA holdout)",
+    )
+    parser.add_argument(
+        "--qa-positive",
+        type=int,
+        default=4,
+        help="Number of cancer-positive patients in QA holdout",
+    )
     args = parser.parse_args()
 
     train(
@@ -272,6 +291,8 @@ def main():
         devices=args.devices,
         label_smoothing=args.label_smoothing,
         pos_weight=args.pos_weight,
+        qa_patients=args.qa_patients,
+        qa_positive=args.qa_positive,
     )
 
 
