@@ -61,15 +61,15 @@ Baseline (0.067)
 
 ---
 
-### Experiment 2: Remove pos_weight
-**Hypothesis**: With label smoothing, pos_weight may hurt more than help
+### Experiment 2: Reduce pos_weight to 0.4
+**Hypothesis**: With label smoothing, high pos_weight overcompensates; 0.4 balances better
 
 | Parameter | Exp 1 | Experiment 2 |
 |-----------|-------|--------------|
-| pos_weight | 23.67 | **1.0 (none)** |
+| pos_weight | 23.67 | **0.4** |
 | Everything else | same | same |
 
-**Expected**: May improve or be neutral
+**Expected**: Better calibration, improved pF1
 
 ---
 

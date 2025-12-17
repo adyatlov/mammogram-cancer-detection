@@ -51,6 +51,7 @@ class MammogramLightningModule(pl.LightningModule):
         learning_rate: Initial learning rate
         pos_weight: Weight for positive class in BCE loss
         num_epochs: Total number of training epochs (for scheduler)
+        label_smoothing: Smoothing for positive labels only (0.2 means 1.0 -> 0.8)
     """
 
     def __init__(
@@ -60,6 +61,7 @@ class MammogramLightningModule(pl.LightningModule):
         learning_rate: float = 1e-4,
         pos_weight: float = 1.0,
         num_epochs: int = 10,
+        label_smoothing: float = 0.0,
     ):
         super().__init__()
         self.save_hyperparameters()
@@ -73,6 +75,9 @@ class MammogramLightningModule(pl.LightningModule):
         # Weighted BCE loss for class imbalance
         self.pos_weight = torch.tensor([pos_weight])
 
+        # Label smoothing for positive class only
+        self.label_smoothing = label_smoothing
+
         # For tracking predictions during validation
         self.val_preds = []
         self.val_labels = []
@@ -81,11 +86,19 @@ class MammogramLightningModule(pl.LightningModule):
         return self.model(x)
 
     def _compute_loss(self, logits: torch.Tensor, labels: torch.Tensor) -> torch.Tensor:
-        """Compute weighted BCE loss."""
+        """Compute weighted BCE loss with optional positive label smoothing."""
         pos_weight = self.pos_weight.to(logits.device)
+
+        # Apply label smoothing to positive labels only
+        # e.g., label_smoothing=0.2 means: 1.0 -> 0.8, 0.0 -> 0.0
+        if self.label_smoothing > 0:
+            smoothed_labels = labels * (1.0 - self.label_smoothing)
+        else:
+            smoothed_labels = labels
+
         return F.binary_cross_entropy_with_logits(
             logits.squeeze(-1),
-            labels,
+            smoothed_labels,
             pos_weight=pos_weight,
         )
 

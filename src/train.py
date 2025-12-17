@@ -42,6 +42,8 @@ def train(
     image_size: int = 512,
     accelerator: str = "auto",
     devices: int = 1,
+    label_smoothing: float = 0.0,
+    pos_weight: float | None = None,
 ):
     """
     Train the mammogram classification model.
@@ -58,6 +60,8 @@ def train(
         image_size: Input image size
         accelerator: PyTorch Lightning accelerator
         devices: Number of devices (GPUs)
+        label_smoothing: Smoothing for positive labels (0.2 means 1.0 -> 0.8)
+        pos_weight: Weight for positive class (None = auto-compute from data)
     """
     # Load preprocessed metadata
     train_csv = data_dir / "train_processed.csv"
@@ -81,8 +85,16 @@ def train(
     # Split remaining data by patient
     train_df, val_df = create_patient_split(remaining_df, val_ratio=val_ratio)
 
-    # Compute class weight
-    pos_weight = compute_pos_weight(train_df)
+    # Compute class weight (auto or specified)
+    if pos_weight is None:
+        computed_pos_weight = compute_pos_weight(train_df)
+    else:
+        print(f"Using specified pos_weight: {pos_weight:.2f}")
+        computed_pos_weight = pos_weight
+
+    # Log label smoothing
+    if label_smoothing > 0:
+        print(f"Using label smoothing: {label_smoothing} (positive labels: 1.0 -> {1.0 - label_smoothing})")
 
     # Create datasets
     train_dataset = MammogramDataset(
@@ -122,8 +134,9 @@ def train(
         model_name=model_name,
         pretrained=True,
         learning_rate=learning_rate,
-        pos_weight=pos_weight,
+        pos_weight=computed_pos_weight,
         num_epochs=num_epochs,
+        label_smoothing=label_smoothing,
     )
 
     # Callbacks
@@ -231,6 +244,18 @@ def main():
         default=1,
         help="Number of devices",
     )
+    parser.add_argument(
+        "--label-smoothing",
+        type=float,
+        default=0.0,
+        help="Label smoothing for positive class (0.2 means 1.0 -> 0.8)",
+    )
+    parser.add_argument(
+        "--pos-weight",
+        type=float,
+        default=None,
+        help="Weight for positive class (default: auto-compute from data)",
+    )
     args = parser.parse_args()
 
     train(
@@ -245,6 +270,8 @@ def main():
         image_size=args.image_size,
         accelerator=args.accelerator,
         devices=args.devices,
+        label_smoothing=args.label_smoothing,
+        pos_weight=args.pos_weight,
     )
 
 
