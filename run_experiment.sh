@@ -15,6 +15,12 @@
 
 set -e  # Exit on error
 
+# Source experiment config if exists
+if [ -f "experiment.env" ]; then
+    echo "Loading experiment config from experiment.env"
+    source experiment.env
+fi
+
 # Get experiment name from argument or git branch
 if [ -n "$1" ]; then
     EXP_NAME="$1"
