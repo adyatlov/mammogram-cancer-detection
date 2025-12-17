@@ -22,6 +22,21 @@ def generate_report(
     # Load predictions
     df = pd.read_csv(qa_predictions_path)
 
+    # Load train_processed.csv to get png paths
+    train_csv = data_dir / "train_processed.csv"
+    if train_csv.exists():
+        train_df = pd.read_csv(train_csv)
+        # Join to get png_path for each image
+        path_map = train_df.set_index(["patient_id", "image_id"])["png_path"].to_dict()
+        df["png_path"] = df.apply(
+            lambda row: path_map.get((row["patient_id"], row["image_id"]), None), axis=1
+        )
+    else:
+        # Fall back to constructing path from patient_id/image_id
+        df["png_path"] = df.apply(
+            lambda row: f"train_processed/{int(row['patient_id'])}/{int(row['image_id'])}.png", axis=1
+        )
+
     # Compute metrics
     labels = df["actual_cancer"].values
     preds = df["predicted_prob"].values
@@ -56,8 +71,12 @@ def generate_report(
         prob = row.predicted_prob
         detected = prob > 0.5
 
-        # Source image path
-        src_img = data_dir / "train_processed" / f"{patient_id}" / f"{image_id}.png"
+        # Source image path (use png_path if available)
+        png_path = getattr(row, 'png_path', None)
+        if png_path:
+            src_img = data_dir / png_path
+        else:
+            src_img = data_dir / "train_processed" / f"{patient_id}" / f"{image_id}.png"
 
         # Destination image name
         status = "DETECTED" if detected else "MISSED"
@@ -95,8 +114,12 @@ def generate_report(
         image_id = int(row.image_id)
         prob = row.predicted_prob
 
-        # Source image path
-        src_img = data_dir / "train_processed" / f"{patient_id}" / f"{image_id}.png"
+        # Source image path (use png_path if available)
+        png_path = getattr(row, 'png_path', None)
+        if png_path:
+            src_img = data_dir / png_path
+        else:
+            src_img = data_dir / "train_processed" / f"{patient_id}" / f"{image_id}.png"
 
         # Destination image name
         dst_name = f"{idx:02d}_FALSE_POS_{patient_id}_{image_id}_prob{prob:.3f}.png"
